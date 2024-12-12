@@ -239,6 +239,9 @@ class Dimension:
             and other.name == self.name \
             and other.__intensity == self.__intensity
 
+    def __repr__(self):
+        return f'({self.name}, {self.intensity})'
+
     @staticmethod
     def parse_xml_element(element: Xml.Element) -> 'Dimension':
         if _get_simple_tag_name(element) != 'dimension':
@@ -275,7 +278,9 @@ class Quiz:
 
     def append_to_element(self, element: Xml.Element):
         sub = Xml.SubElement(element, 'quiz',
-                             attrib={'name': self.name, 'creation': self.creation_time.isoformat()})
+                             attrib={'creation': self.creation_time.isoformat()})
+        if self.name:
+            sub.attrib['name'] = self.name
         if self.modification_time:
             sub.attrib['modification'] = self.modification_time.isoformat()
 
