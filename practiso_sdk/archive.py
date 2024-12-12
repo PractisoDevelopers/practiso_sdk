@@ -202,11 +202,19 @@ class Options(ArchiveFrame):
 
 
 class Dimension:
+    """
+    What knowledge point a question is related to and how much so.
+    """
     name: str
     __intensity: float
 
     @property
     def intensity(self):
+        """
+        How much the knowledge is related to a question,
+        ranging in (0, 1].
+        :return: Length of the vector representing the relativity in this dimension.
+        """
         return self.__intensity
 
     @intensity.setter
@@ -243,6 +251,14 @@ class Dimension:
 
 
 class Quiz:
+    """
+    Basic unit of a Practiso session representing a question.
+    A quiz is composed of an array of frames, where each either
+    presents the question itself or the answerable fields.
+    This only affects how the user sees the question and how the system
+    handles the answers and recommendations, not how the user interacts
+    with the interface.
+    """
     name: str | None
     creation_time: datetime
     modification_time: datetime | None
