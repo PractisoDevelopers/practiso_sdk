@@ -123,7 +123,7 @@ class OptionItem:
     """
     is_key: bool
     """
-    True if this option is one or only of the correct ones.
+    True if this option is one of or the only correct ones.
     """
     priority: int
     """
@@ -168,7 +168,7 @@ class OptionItem:
 
 class Options(ArchiveFrame):
     """
-    Abstraction of an options frame, composed of OptionItems.
+    Abstraction of an options frame, composed of OptionItem.
     """
     content: set[OptionItem]
     name: str | None
