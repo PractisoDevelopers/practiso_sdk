@@ -27,6 +27,9 @@ def _namespace_extended(tag: str):
 
 
 class ArchiveFrame:
+    """
+    Abstraction of supported frames.
+    """
     def append_to_element(self, element: Xml.Element):
         pass
 
@@ -45,6 +48,9 @@ class ArchiveFrame:
 
 
 class Text(ArchiveFrame):
+    """
+    Abstraction of a text frame.
+    """
     content: str
 
     def __init__(self, content: str):
@@ -69,6 +75,9 @@ class Text(ArchiveFrame):
 
 
 class Image(ArchiveFrame):
+    """
+    Abstraction of an image frame.
+    """
     filename: str
     width: int
     height: int
@@ -109,8 +118,19 @@ class Image(ArchiveFrame):
 
 
 class OptionItem:
+    """
+    Abstraction of a selectable option item.
+    """
     is_key: bool
+    """
+    True if this option is one or only of the correct ones.
+    """
     priority: int
+    """
+    How this option is ranked. Options with the same priority
+    will be shuffled randomly, while ones of higher priority (smaller value)
+    will be ranked ascent.
+    """
     content: ArchiveFrame
 
     def __init__(self, content: ArchiveFrame, is_key: bool = False, priority: int = 0):
@@ -147,6 +167,9 @@ class OptionItem:
 
 
 class Options(ArchiveFrame):
+    """
+    Abstraction of an options frame, composed of OptionItems.
+    """
     content: set[OptionItem]
     name: str | None
 
@@ -282,6 +305,13 @@ class Quiz:
 
 
 class QuizContainer:
+    """
+    Derivation from a snapshot of the database, removing unnecessary items
+    (i.e. reducing SQL relations to direct object composition)
+    and is enough to be imported to reconstruct the meaningful part.
+
+    Note: binary resources such as images are not included.
+    """
     creation_time: datetime
     content: list[Quiz]
 
@@ -290,13 +320,22 @@ class QuizContainer:
         self.creation_time = creation_time if creation_time is not None else datetime.now(UTC)
 
     def to_xml_element(self) -> Xml.Element:
+        """
+        Convert to an XML hierarchy.
+        :return: XML hierarchy where the root element represents the archive.
+        """
         doc = Xml.Element('archive', attrib={'xmlns': NAMESPACE,
                                              'creation': self.creation_time.isoformat()})
         for quiz in self.content:
             quiz.append_to_element(doc)
         return doc
 
-    def to_xml_document(self) -> bytes:
+    def to_bytes(self) -> bytes:
+        """
+        Convert to a byte array, which once gzipped is ready
+        to be imported by Practiso.
+        :return: A byte array representing the archive.
+        """
         ele = self.to_xml_element()
         return Xml.tostring(ele, xml_declaration=True, encoding='utf-8')
 
@@ -307,6 +346,11 @@ class QuizContainer:
 
     @staticmethod
     def parse_xml_element(element: Xml.Element) -> 'QuizContainer':
+        """
+        Convert an XML hierarchy to a comprehensible quiz composite.
+        :param element: The XML hierarchy to be parsed.
+        :return: The quiz composite.
+        """
         if _get_simple_tag_name(element) != 'archive':
             raise TypeError(f'Unexpected tag {_get_simple_tag_name(element)}')
 

@@ -33,7 +33,7 @@ class ArchiveTestCase(unittest.TestCase):
     )])
 
     def test_should_archive(self):
-        xml_bytes = self.sample_quiz_set.to_xml_document()
+        xml_bytes = self.sample_quiz_set.to_bytes()
 
         tree = ElementTree()
         tree.parse(source=BytesIO(xml_bytes))
