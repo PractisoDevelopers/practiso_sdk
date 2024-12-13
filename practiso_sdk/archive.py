@@ -383,6 +383,9 @@ class QuizContainer:
 
 
 class Builder:
+    """
+    Utility class to build an archive.
+    """
     __quizzes: list[Quiz] = list()
     __creation_time: datetime
     __staging_stack: list[Quiz | ArchiveFrame | OptionItem] = list()
@@ -392,10 +395,16 @@ class Builder:
 
     def begin_quiz(self, name: str | None = None, creation_time: datetime | None = None,
                    modification_time: datetime | None = None) -> 'Builder':
+        """
+        Begin a quiz, which is added after end_quiz is called.
+        """
         self.__staging_stack.append(Quiz(list(), set(), name, creation_time, modification_time))
         return self
 
     def end_quiz(self) -> 'Builder':
+        """
+        Add the previously begun quiz to the resulting archive.
+        """
         self.__quizzes.append(self.__pop_staged_stack_safe([Quiz]))
         return self
 
@@ -413,6 +422,9 @@ class Builder:
         return e
 
     def add_text(self, content: str) -> 'Builder':
+        """
+        Add a text frame directly into the current quiz / option.
+        """
         peak = self.__get_staged_peak_safe([Quiz, OptionItem])
         if isinstance(peak, Quiz):
             peak.frames.append(Text(content))
@@ -421,15 +433,27 @@ class Builder:
         return self
 
     def begin_image(self, alt_text: str | None = None) -> 'Builder':
+        """
+        Begin an image frame, which is added to the current quiz / option
+        after calling end_image.
+        """
         self.__staging_stack.append(Image('', 0, 0, alt_text))
         return self
 
     def attach_image_file(self, filename: str) -> 'Builder':
+        """
+        Copies a file into the staging resource buffer
+        :param filename: the filename in local system
+        """
         # TODO(copy from filename to internal buffer)
         self.__get_staged_peak_safe([Image]).filename = filename
         return self
 
     def end_image(self) -> 'Builder':
+        """
+        Add the previously begun image frame into the current
+        quiz / option.
+        """
         image = self.__pop_staged_stack_safe([Image])
         peak = self.__get_staged_peak_safe([Quiz, OptionItem])
         if isinstance(peak, Quiz):
@@ -439,19 +463,37 @@ class Builder:
         return self
 
     def begin_options(self, name: str | None = None) -> 'Builder':
+        """
+        Begin an options frame, which is added to the current quiz
+        after end_options is called.
+        :param name: caption of the frame
+        """
         self.__staging_stack.append(Options(set(), name))
         return self
 
     def end_options(self) -> 'Builder':
+        """
+        Add the options frame previously begun to the current quiz.
+        """
         e = self.__pop_staged_stack_safe([Options])
         self.__get_staged_peak_safe([Quiz]).frames.append(e)
         return self
 
     def begin_option(self, is_key: bool = False, priority: int = 0) -> 'Builder':
+        """
+        Begin an option item, which is added to the current options frame
+        after end_option is called.
+        :param is_key: True if the option is considered one of or the only answer
+        :param priority: how this option should be sorted when a Practiso session begins
+        :return:
+        """
         self.__staging_stack.append(OptionItem(ArchiveFrame(), is_key, priority))
         return self
 
     def end_option(self) -> 'Builder':
+        """
+        Add the previously begun option to the current options frame.
+        """
         e: OptionItem = self.__pop_staged_stack_safe([OptionItem])
         if type(e) == ArchiveFrame:
             raise ValueError('Empty option item')
@@ -461,4 +503,7 @@ class Builder:
         return self
 
     def build(self) -> 'QuizContainer':
+        """
+        Call it a day.
+        """
         return QuizContainer(self.__quizzes, self.__creation_time)
