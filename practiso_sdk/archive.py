@@ -30,6 +30,7 @@ class ArchiveFrame:
     """
     Abstraction of supported frames.
     """
+
     def append_to_element(self, element: Xml.Element):
         pass
 
@@ -379,3 +380,85 @@ class QuizContainer:
             creation_time=_get_attribute_safe(element, 'creation', datetime.fromisoformat),
             content=list(Quiz.parse_xml_element(e) for e in element if _get_simple_tag_name(e) == 'quiz')
         )
+
+
+class Builder:
+    __quizzes: list[Quiz] = list()
+    __creation_time: datetime
+    __staging_stack: list[Quiz | ArchiveFrame | OptionItem] = list()
+
+    def __init__(self, creation_time: datetime | None = None):
+        self.__creation_time = creation_time if creation_time else datetime.now(UTC)
+
+    def begin_quiz(self, name: str | None = None, creation_time: datetime | None = None,
+                   modification_time: datetime | None = None) -> 'Builder':
+        self.__staging_stack.append(Quiz(list(), set(), name, creation_time, modification_time))
+        return self
+
+    def end_quiz(self) -> 'Builder':
+        self.__quizzes.append(self.__pop_staged_stack_safe([Quiz]))
+        return self
+
+    def __get_staged_peak_safe(self, t: list[type]) -> Any:
+        e = self.__staging_stack[-1]
+        if not any(isinstance(e, x) for x in t):
+            p1 = ', '.join(x.__name__ for x in t[:-1])
+            p2 = t[-1].__name__
+            raise TypeError(f'Begin a {p1} or {p2} first' if p1 else f'Begin a {p2} first')
+        return e
+
+    def __pop_staged_stack_safe(self, t: list[type]) -> Any:
+        e = self.__get_staged_peak_safe(t)
+        self.__staging_stack.pop()
+        return e
+
+    def add_text(self, content: str) -> 'Builder':
+        peak = self.__get_staged_peak_safe([Quiz, OptionItem])
+        if isinstance(peak, Quiz):
+            peak.frames.append(Text(content))
+        elif isinstance(peak, OptionItem):
+            peak.content = Text(content)
+        return self
+
+    def begin_image(self, alt_text: str | None = None) -> 'Builder':
+        self.__staging_stack.append(Image('', 0, 0, alt_text))
+        return self
+
+    def attach_image_file(self, filename: str) -> 'Builder':
+        # TODO(copy from filename to internal buffer)
+        self.__get_staged_peak_safe([Image]).filename = filename
+        return self
+
+    def end_image(self) -> 'Builder':
+        image = self.__pop_staged_stack_safe([Image])
+        peak = self.__get_staged_peak_safe([Quiz, OptionItem])
+        if isinstance(peak, Quiz):
+            peak.frames.append(image)
+        elif isinstance(peak, OptionItem):
+            peak.content = image
+        return self
+
+    def begin_options(self, name: str | None = None) -> 'Builder':
+        self.__staging_stack.append(Options(set(), name))
+        return self
+
+    def end_options(self) -> 'Builder':
+        e = self.__pop_staged_stack_safe([Options])
+        self.__get_staged_peak_safe([Quiz]).frames.append(e)
+        return self
+
+    def begin_option(self, is_key: bool = False, priority: int = 0) -> 'Builder':
+        self.__staging_stack.append(OptionItem(ArchiveFrame(), is_key, priority))
+        return self
+
+    def end_option(self) -> 'Builder':
+        e: OptionItem = self.__pop_staged_stack_safe([OptionItem])
+        if type(e) == ArchiveFrame:
+            raise ValueError('Empty option item')
+
+        self.__get_staged_peak_safe([Options]).content.add(e)
+
+        return self
+
+    def build(self) -> 'QuizContainer':
+        return QuizContainer(self.__quizzes, self.__creation_time)
