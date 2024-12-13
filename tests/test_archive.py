@@ -2,7 +2,7 @@ import unittest
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree
 
-import practiso_sdk.archive as archive
+from practiso_sdk import archive
 
 
 class ArchiveTestCase(unittest.TestCase):
@@ -10,7 +10,7 @@ class ArchiveTestCase(unittest.TestCase):
         name='Test quiz 1',
         frames=[
             archive.Text('Hi I am text frame by test quiz 1'),
-            archive.Image(filename='cat_walker.jpg', width=0, height=0,
+            archive.Image(filename='cat_walker.jpg', width=200, height=400,
                           alt_text='The DJ Cat Walker popular among the Chinese'),
             archive.Options(content=[
                 archive.OptionItem(
@@ -40,26 +40,6 @@ class ArchiveTestCase(unittest.TestCase):
 
         parsed = archive.QuizContainer.parse_xml_element(tree.getroot())
         self.assertEqual(parsed, self.sample_quiz_set)
-
-    def test_builder(self):
-        builder = archive.Builder(creation_time=self.sample_quiz_set.creation_time)
-        builder.begin_quiz('Test quiz 1', creation_time=self.sample_quiz_set.content[0].creation_time) \
-            .add_text('Hi I am text frame by test quiz 1') \
-            .begin_image('The DJ Cat Walker popular among the Chinese') \
-            .attach_image_file('cat_walker.jpg') \
-            .end_image() \
-            .begin_options() \
-            .begin_option(is_key=True, priority=0) \
-            .add_text('Option 1') \
-            .end_option() \
-            .begin_option(is_key=False, priority=0) \
-            .add_text('Option 2') \
-            .end_option() \
-            .end_options() \
-            .add_text("that's all") \
-            .end_quiz()
-        built = builder.build()
-        self.assertEqual(built.content[0].frames, self.sample_quiz_set.content[0].frames)
 
 
 if __name__ == '__main__':

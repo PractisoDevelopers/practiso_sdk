@@ -5,10 +5,10 @@ import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
 
 from practiso_sdk.archive import Quiz, Dimension
-from practiso_sdk.vectorize import Agent
+from practiso_sdk.build import VectorizeAgent
 
 
-class GeminiAgent(Agent):
+class GeminiAgent(VectorizeAgent):
     __api_key: str
 
     # noinspection PyTypeChecker
