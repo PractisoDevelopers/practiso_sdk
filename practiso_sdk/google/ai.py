@@ -9,6 +9,9 @@ from practiso_sdk.build import VectorizeAgent
 
 
 class GeminiAgent(VectorizeAgent):
+    """
+    Uses Gemini flash to determine dimensions of questions.
+    """
     __api_key: str
     __model: genai.GenerativeModel
 

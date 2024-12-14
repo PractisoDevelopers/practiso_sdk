@@ -6,14 +6,24 @@ from practiso_sdk.archive import Quiz, ArchiveFrame, OptionItem, Text, Image, Op
 
 
 class VectorizeAgent:
+    """
+    Determines what categories a question falls into and how much so.
+    """
     async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
         pass
 
 
 class DefaultVectorizeAgent(VectorizeAgent):
+    """
+    An VectorizeAgent where all results are predetermined.
+    """
     default: set[Dimension]
 
     def __init__(self, default: set[Dimension] | list[Dimension]):
+        """
+        Initialize a DefaultVectorizeAgent.
+        :param default: The predetermined categorization result.
+        """
         self.default = default if isinstance(default, set) else set(default)
 
     async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
