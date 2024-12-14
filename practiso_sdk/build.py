@@ -100,9 +100,10 @@ class RateLimitedVectorizeAgent(VectorizeAgent):
         if self.__semaphore:
             await self.__semaphore.acquire()
 
-        result = await self.__wrapped.get_dimensions(quiz)
-        self.__mutex.release()
-        return result
+        try:
+            return await self.__wrapped.get_dimensions(quiz)
+        finally:
+            self.__mutex.release()
 
 
 class Builder:
