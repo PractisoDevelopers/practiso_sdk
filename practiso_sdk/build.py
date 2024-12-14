@@ -9,6 +9,7 @@ class VectorizeAgent:
     """
     Determines what categories a question falls into and how much so.
     """
+
     async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
         pass
 
@@ -28,6 +29,41 @@ class DefaultVectorizeAgent(VectorizeAgent):
 
     async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
         return self.default
+
+
+class RateLimitedVectorizeAgent(VectorizeAgent):
+    __wrapped: VectorizeAgent
+    __rpm: float
+    __batch_size: int
+    __semaphore: asyncio.Semaphore | None = None
+    __mutex: asyncio.Lock
+
+    def __init__(self, wrapped: VectorizeAgent, rpm: float, batch_size: int = 0):
+        self.__wrapped = wrapped
+        self.__rpm = rpm
+        self.__batch_size = batch_size
+        self.__mutex = asyncio.Lock()
+
+    def __reset_signals(self):
+        if self.__semaphore.locked():
+            for _ in range(self.__batch_size):
+                self.__semaphore.release()
+        self.__semaphore = None
+
+    async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
+        await self.__mutex.acquire()
+
+        if self.__semaphore is None and self.__batch_size > 0:
+            self.__semaphore = asyncio.Semaphore(self.__batch_size)
+
+            asyncio.get_event_loop().call_later(60 / self.__rpm * self.__batch_size, self.__reset_signals)
+
+        if self.__semaphore:
+            await self.__semaphore.acquire()
+
+        result = await self.__wrapped.get_dimensions(quiz)
+        self.__mutex.release()
+        return result
 
 
 class Builder:

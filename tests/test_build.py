@@ -1,10 +1,12 @@
+import asyncio
 import os
 import unittest
 from unittest import TestCase
 
-import practiso_sdk.archive as archive
 import practiso_sdk.google.ai
+from practiso_sdk import archive
 from practiso_sdk import build
+from practiso_sdk.archive import Quiz, Dimension
 from tests import asyncio_run
 
 sample_quiz = archive.Quiz(
@@ -29,6 +31,35 @@ class TestGeminiAgent(TestCase):
         dimensions = await agent.get_dimensions(sample_quiz)
         print(dimensions)
         self.assertGreaterEqual(len(dimensions), 2)
+
+
+class PrintAgent(build.VectorizeAgent):
+    counter = 0
+    __msg: str
+
+    def __init__(self, msg: str):
+        self.__msg = msg
+
+    async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
+        print(f'Request {self.counter}, {self.__msg}')
+        self.counter += 1
+        return set()
+
+
+class TestRateLimit(TestCase):
+    @staticmethod
+    async def run_continuous(size: int, agent: build.VectorizeAgent):
+        await asyncio.gather(*(agent.get_dimensions(sample_quiz) for _ in range(size)))
+
+    @asyncio_run
+    async def test_r3b1_c6(self):
+        r3b1 = build.RateLimitedVectorizeAgent(PrintAgent('RPM3, batch1'), rpm=3, batch_size=1)
+        await self.run_continuous(6, r3b1)
+
+    @asyncio_run
+    async def test_r160b20_c42(self):
+        r20b20 = build.RateLimitedVectorizeAgent(PrintAgent('RPM160, batch20'), rpm=160, batch_size=20)
+        await self.run_continuous(42, r20b20)
 
 
 class TestBuilder(TestCase):
