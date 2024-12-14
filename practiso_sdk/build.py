@@ -2,6 +2,8 @@ import asyncio
 from datetime import datetime, UTC
 from typing import Any
 
+import tqdm
+
 from practiso_sdk.archive import Quiz, ArchiveFrame, OptionItem, Text, Image, Options, QuizContainer, Dimension
 
 
@@ -206,11 +208,12 @@ class Builder:
         :param vectorizer: The agent used to determine what dimensions are the quizzes respectively falls into.
         :return: The archive.
         """
-
         if vectorizer is not None:
-            async def update_dimensions(quiz: Quiz):
-                quiz.dimensions = await vectorizer.get_dimensions(quiz)
+            with tqdm.tqdm(total=len(self.__quizzes)) as pbar:
+                async def update_dimensions(quiz: Quiz):
+                    quiz.dimensions = await vectorizer.get_dimensions(quiz)
+                    pbar.update(pbar.n + 1)
 
-            await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))
+                await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))
 
         return QuizContainer(self.__quizzes, self.__creation_time)
