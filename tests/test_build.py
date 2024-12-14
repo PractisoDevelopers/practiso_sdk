@@ -96,11 +96,14 @@ class TestBuilder(TestCase):
         image_io.write(base64.b64decode('R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA='))
         product = await builder.begin_quiz().begin_image().attach_image(image_io, '.png').end_image().end_quiz().build()
 
-        self.assertEqual(product.content[0].frames[0].width, 1)
-        self.assertEqual(product.content[0].frames[0].height, 1)
+        image_frame: archive.Image = product.content[0].frames[0]
+        self.assertEqual(image_frame.width, 1)
+        self.assertEqual(image_frame.height, 1)
 
-        parsed = build.QuizContainer.open(BytesIO(product.to_bytes()))
+        parsed = archive.open(BytesIO(product.to_bytes()))
         self.assertEqual(parsed, product)
+        image_io.seek(0)
+        self.assertEqual(parsed.resources[image_frame.filename].read(), image_io.read())
 
 
 if __name__ == '__main__':

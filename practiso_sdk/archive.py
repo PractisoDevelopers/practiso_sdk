@@ -399,21 +399,27 @@ class QuizContainer:
             content=list(Quiz.parse_xml_element(e) for e in element if _get_simple_tag_name(e) == 'quiz')
         )
 
-    @staticmethod
-    def open(fb: IO) -> 'QuizContainer':
-        content = fb.read()
-        i = content.index(0)
-        tree = Xml.ElementTree()
-        tree.parse(source=BytesIO(content[:i]))
 
-        container = QuizContainer.parse_xml_element(tree.getroot())
+def open(fp: IO) -> 'QuizContainer':
+    """
+    Read an archive into a structured object.
+    :param fp: The stream to read.
+    :return: Quiz container with all resources and frames.
+    """
+    content = fp.read()
+    i = content.index(0)
+    tree = Xml.ElementTree()
+    tree.parse(source=BytesIO(content[:i]))
+
+    container = QuizContainer.parse_xml_element(tree.getroot())
+    head = i + 1
+    while head < len(content):
+        i = content.index(0, head)
+        name = content[head:i].decode('utf-8')
         head = i + 1
-        while head < len(content):
-            i = content.index(0, head)
-            name = content[head:i]
-            size = int.from_bytes(content[i + 1:i + 5])
-            container.resources[name] = BytesIO(content[i + 6:i + 6 + size])
+        size = int.from_bytes(content[head:head + 4])
+        head += 4
+        container.resources[name] = BytesIO(content[head:head + size])
+        head += size
 
-            head = i + 6 + size + 1
-
-        return container
+    return container
