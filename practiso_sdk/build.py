@@ -7,12 +7,37 @@ import tqdm
 from practiso_sdk.archive import Quiz, ArchiveFrame, OptionItem, Text, Image, Options, QuizContainer, Dimension
 
 
+class RetriableError(Exception):
+    def __init__(self, message: str):
+        """
+        Initialize an RetriableError, and expect the raising
+        procedure be restarted.
+        :param message: Message to display, should start in lowercase.
+        """
+        self.message = message
+        super().__init__(message)
+
+
+class TooManyRetrialsError(Exception):
+    def __init__(self, last: RetriableError):
+        self.last_retrial = last
+
+    def __repr__(self):
+        return self.last_retrial.message
+
+    def __str__(self):
+        return f'TooManyRetrials: {self.last_retrial.message}'
+
 class VectorizeAgent:
     """
     Determines what categories a question falls into and how much so.
     """
 
     async def get_dimensions(self, quiz: Quiz) -> set[Dimension]:
+        """
+        Throws RetriableError if any exceptional situation strikes, meaning
+        this is supposed to be caught and the procedure is called again.
+        """
         pass
 
 
@@ -211,7 +236,17 @@ class Builder:
         if vectorizer is not None:
             with tqdm.tqdm(total=len(self.__quizzes)) as pbar:
                 async def update_dimensions(quiz: Quiz):
-                    quiz.dimensions = await vectorizer.get_dimensions(quiz)
+                    retrials = 0
+                    while True:
+                        try:
+                            quiz.dimensions = await vectorizer.get_dimensions(quiz)
+                            break
+                        except RetriableError as e:
+                            print(f'Error from {type(vectorizer).__name__}: {e.message}')
+                            retrials += 1
+                            if retrials >= 10:
+                                raise RuntimeError(e.message)
+
                     pbar.update(1)
 
                 await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))

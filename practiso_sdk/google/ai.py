@@ -5,7 +5,21 @@ import google.generativeai as genai
 from google.ai.generativelanguage_v1beta.types import content
 
 from practiso_sdk.archive import Quiz, Dimension
-from practiso_sdk.build import VectorizeAgent
+from practiso_sdk.build import VectorizeAgent, RetriableError
+
+
+def get_dimension_from_ai_safe(text: str) -> set[Dimension]:
+    try:
+        response_content = json.loads(text)
+    except json.JSONDecodeError:
+        raise RetriableError('invalid json format')
+    if 'dimensions' not in response_content or not all(
+            'name' in dim and 'intensity' in dim \
+            and isinstance(dim['name'], str) and isinstance(dim['intensity'], float) \
+            for dim in response_content['dimensions']):
+        raise RetriableError('invalid response format')
+
+    return set(Dimension(dim['name'], dim['intensity']) for dim in response_content['dimensions'])
 
 
 class GeminiAgent(VectorizeAgent):
@@ -74,5 +88,5 @@ class GeminiAgent(VectorizeAgent):
 
         chat_session = self.__model.start_chat(history=[quiz_content])
         response = await chat_session.send_message_async("INSERT_INPUT_HERE")
-        response_content = json.loads(response.text)
-        return set(Dimension(dim['name'], dim['intensity']) for dim in response_content['dimensions'])
+
+        return get_dimension_from_ai_safe(response.text)
