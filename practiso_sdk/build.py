@@ -32,6 +32,10 @@ class DefaultVectorizeAgent(VectorizeAgent):
 
 
 class RateLimitedVectorizeAgent(VectorizeAgent):
+    """
+    A VectorizeAgent which wraps another agent
+    and limits how much execution there is in some time.
+    """
     __wrapped: VectorizeAgent
     __rpm: float
     __batch_size: int
@@ -39,6 +43,13 @@ class RateLimitedVectorizeAgent(VectorizeAgent):
     __mutex: asyncio.Lock
 
     def __init__(self, wrapped: VectorizeAgent, rpm: float, batch_size: int = 0):
+        """
+        Initialize a rate-limited vectorize agent. This agent wraps around another agent
+        and limits the request rate.
+        :param wrapped: The underlying agent which actually carries the action.
+        :param rpm: Request per minute. Can be any positive real number.
+        :param batch_size: How many requests are sent together.
+        """
         self.__wrapped = wrapped
         self.__rpm = rpm
         self.__batch_size = batch_size
