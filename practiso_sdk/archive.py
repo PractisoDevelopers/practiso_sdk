@@ -1,6 +1,7 @@
 import xml.etree.ElementTree as Xml
 from datetime import datetime, UTC
-from typing import Callable, Any
+from io import BytesIO
+from typing import Callable, Any, IO
 
 NAMESPACE = 'http://schema.zhufucdev.com/practiso'
 
@@ -336,10 +337,13 @@ class QuizContainer:
     """
     creation_time: datetime
     content: list[Quiz]
+    resources: dict[str, IO]
 
-    def __init__(self, content: list[Quiz], creation_time: datetime | None = None):
+    def __init__(self, content: list[Quiz], creation_time: datetime | None = None,
+                 resources: dict[str, IO] | None = None):
         self.content = content
         self.creation_time = creation_time if creation_time is not None else datetime.now(UTC)
+        self.resources = resources if resources else dict()
 
     def to_xml_element(self) -> Xml.Element:
         """
@@ -359,7 +363,21 @@ class QuizContainer:
         :return: A byte array representing the archive.
         """
         ele = self.to_xml_element()
-        return Xml.tostring(ele, xml_declaration=True, encoding='utf-8')
+        xml_bytes = Xml.tostring(ele, xml_declaration=True, encoding='utf-8')
+        if len(self.resources) <= 0:
+            return xml_bytes
+
+        buffer = bytearray()
+        buffer.extend(xml_bytes)
+        buffer.append(0)
+        for (name, content) in self.resources.items():
+            buffer.extend(name.encode('utf-8'))
+            buffer.append(0)
+            cb = content.read()
+            buffer.extend(len(cb).to_bytes(4))
+            buffer.extend(cb)
+
+        return buffer
 
     def __eq__(self, other):
         return isinstance(other, QuizContainer) \
@@ -380,3 +398,22 @@ class QuizContainer:
             creation_time=_get_attribute_safe(element, 'creation', datetime.fromisoformat),
             content=list(Quiz.parse_xml_element(e) for e in element if _get_simple_tag_name(e) == 'quiz')
         )
+
+    @staticmethod
+    def open(fb: IO) -> 'QuizContainer':
+        content = fb.read()
+        i = content.index(0)
+        tree = Xml.ElementTree()
+        tree.parse(source=BytesIO(content[:i]))
+
+        container = QuizContainer.parse_xml_element(tree.getroot())
+        head = i + 1
+        while head < len(content):
+            i = content.index(0, head)
+            name = content[head:i]
+            size = int.from_bytes(content[i + 1:i + 5])
+            container.resources[name] = BytesIO(content[i + 6:i + 6 + size])
+
+            head = i + 6 + size + 1
+
+        return container

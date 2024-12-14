@@ -1,7 +1,9 @@
 import asyncio
+import uuid
 from datetime import datetime, UTC
-from typing import Any
+from typing import Any, IO
 
+import PIL.Image
 import tqdm
 
 from practiso_sdk.archive import Quiz, ArchiveFrame, OptionItem, Text, Image, Options, QuizContainer, Dimension
@@ -27,6 +29,7 @@ class TooManyRetrialsError(Exception):
 
     def __str__(self):
         return f'TooManyRetrials: {self.last_retrial.message}'
+
 
 class VectorizeAgent:
     """
@@ -113,11 +116,13 @@ class Builder:
     __quizzes: list[Quiz]
     __creation_time: datetime
     __staging_stack: list[Quiz | ArchiveFrame | OptionItem]
+    __resource_buffer: dict[str, IO]
 
     def __init__(self, creation_time: datetime | None = None):
         self.__quizzes = list()
         self.__staging_stack = list()
         self.__creation_time = creation_time if creation_time else datetime.now(UTC)
+        self.__resource_buffer = dict()
 
     def begin_quiz(self, name: str | None = None, creation_time: datetime | None = None,
                    modification_time: datetime | None = None) -> 'Builder':
@@ -166,14 +171,38 @@ class Builder:
         self.__staging_stack.append(Image('', 0, 0, alt_text))
         return self
 
+    def attach_image(self, fp: IO, extension: str = '') -> 'Builder':
+        """
+        Stream into the staging resource buffer, and set the current image frame
+        to its size if it is seekable.
+        The resource buffer will be baked into the result when calling build.
+        :param fp: The image content.
+        :param extension: Optional suffix to the resource id.
+        """
+        res_id = str(uuid.uuid4()) + extension
+        self.__resource_buffer[res_id] = fp
+
+        frame = self.__get_staged_peak_safe([Image])
+        frame.filename = res_id
+        if fp.seekable():
+            image = PIL.Image.open(fp)
+            (width, height) = image.size
+            frame.width = width
+            frame.height = height
+
+            fp.seek(0)
+
+        return self
+
     def attach_image_file(self, filename: str) -> 'Builder':
         """
-        Copies a file into the staging resource buffer
-        :param filename: the filename in local system
+        Copy a file into the staging resource buffer, and set the current image frame
+        to its size. The resource buffer will be baked into the result when calling build.
+        The frame filename doesn't represent the argumental one.
+        :param filename: the filename in local system.
         """
-        # TODO(copy from filename to internal buffer)
-        self.__get_staged_peak_safe([Image]).filename = filename
-        return self
+        with open(filename, 'rb') as fi:
+            return self.attach_image(fi, filename.rsplit('.', maxsplit=2)[-1])
 
     def end_image(self) -> 'Builder':
         """
@@ -252,4 +281,4 @@ class Builder:
 
                 await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))
 
-        return QuizContainer(self.__quizzes, self.__creation_time)
+        return QuizContainer(self.__quizzes, self.__creation_time, self.__resource_buffer)

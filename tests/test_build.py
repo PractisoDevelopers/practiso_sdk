@@ -1,6 +1,8 @@
 import asyncio
+import base64
 import os
 import unittest
+from io import BytesIO
 from unittest import TestCase
 
 import practiso_sdk.google.ai
@@ -86,6 +88,19 @@ class TestBuilder(TestCase):
 
         built = await builder.build(vectorizer=build.DefaultVectorizeAgent(sample_quiz.dimensions))
         self.assertEqual(built.content[0], sample_quiz)
+
+    @asyncio_run
+    async def test_attach_image(self):
+        builder = build.Builder()
+        image_io = BytesIO()
+        image_io.write(base64.b64decode('R0lGODlhAQABAAAAACH5BAEAAAAALAAAAAABAAEAAAIBAAA='))
+        product = await builder.begin_quiz().begin_image().attach_image(image_io, '.png').end_image().end_quiz().build()
+
+        self.assertEqual(product.content[0].frames[0].width, 1)
+        self.assertEqual(product.content[0].frames[0].height, 1)
+
+        parsed = build.QuizContainer.open(BytesIO(product.to_bytes()))
+        self.assertEqual(parsed, product)
 
 
 if __name__ == '__main__':
