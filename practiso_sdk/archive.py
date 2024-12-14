@@ -1,4 +1,3 @@
-import asyncio
 import xml.etree.ElementTree as Xml
 from datetime import datetime, UTC
 from typing import Callable, Any

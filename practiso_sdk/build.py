@@ -35,7 +35,7 @@ class RateLimitedVectorizeAgent(VectorizeAgent):
     __wrapped: VectorizeAgent
     __rpm: float
     __batch_size: int
-    __semaphore: asyncio.Semaphore | None = None
+    __semaphore: asyncio.Semaphore | None
     __mutex: asyncio.Lock
 
     def __init__(self, wrapped: VectorizeAgent, rpm: float, batch_size: int = 0):
@@ -43,6 +43,7 @@ class RateLimitedVectorizeAgent(VectorizeAgent):
         self.__rpm = rpm
         self.__batch_size = batch_size
         self.__mutex = asyncio.Lock()
+        self.__semaphore = None
 
     def __reset_signals(self):
         if self.__semaphore.locked():
@@ -70,11 +71,13 @@ class Builder:
     """
     Utility class to build an archive.
     """
-    __quizzes: list[Quiz] = list()
+    __quizzes: list[Quiz]
     __creation_time: datetime
-    __staging_stack: list[Quiz | ArchiveFrame | OptionItem] = list()
+    __staging_stack: list[Quiz | ArchiveFrame | OptionItem]
 
     def __init__(self, creation_time: datetime | None = None):
+        self.__quizzes = list()
+        self.__staging_stack = list()
         self.__creation_time = creation_time if creation_time else datetime.now(UTC)
 
     def begin_quiz(self, name: str | None = None, creation_time: datetime | None = None,
