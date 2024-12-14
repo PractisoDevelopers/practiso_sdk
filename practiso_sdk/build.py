@@ -212,7 +212,7 @@ class Builder:
             with tqdm.tqdm(total=len(self.__quizzes)) as pbar:
                 async def update_dimensions(quiz: Quiz):
                     quiz.dimensions = await vectorizer.get_dimensions(quiz)
-                    pbar.update(pbar.n + 1)
+                    pbar.update(1)
 
                 await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))
 
