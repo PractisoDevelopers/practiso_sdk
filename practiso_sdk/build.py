@@ -201,8 +201,7 @@ class Builder:
         The frame filename doesn't represent the argumental one.
         :param filename: the filename in local system.
         """
-        with open(filename, 'rb') as fi:
-            return self.attach_image(fi, filename.rsplit('.', maxsplit=2)[-1])
+        return self.attach_image(fi, filename.rsplit('.', maxsplit=2)[-1])
 
     def end_image(self) -> 'Builder':
         """

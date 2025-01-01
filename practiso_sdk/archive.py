@@ -345,6 +345,13 @@ class QuizContainer:
         self.creation_time = creation_time if creation_time is not None else datetime.now(UTC)
         self.resources = resources if resources else dict()
 
+    def __enter__(self) -> 'QuizContainer':
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for fp in self.resources.values():
+            fp.close()
+
     def to_xml_element(self) -> Xml.Element:
         """
         Convert to an XML hierarchy.
