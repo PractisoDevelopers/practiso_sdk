@@ -333,7 +333,12 @@ class QuizContainer:
     (i.e. reducing SQL relations to direct object composition)
     and is enough to be imported to reconstruct the meaningful part.
 
-    Note: binary resources such as images are not included.
+    Note: binary resources such as images is probably not included if
+    this instance was created by an archive builder, depending on the
+    upstream opearation, which can be passing down a file descriptor
+    where the actual data is not buffered and relays on the file system.
+
+    Note: this instance is context manageable.
     """
     creation_time: datetime
     content: list[Quiz]
