@@ -1,4 +1,5 @@
 import asyncio
+import os.path
 import uuid
 from datetime import datetime, UTC
 from typing import Any, IO
@@ -204,7 +205,8 @@ class Builder:
         The frame filename doesn't represent the argumental one.
         :param filename: the filename in local system.
         """
-        return self.attach_image(open(filename, 'rb'), filename.rsplit('.', maxsplit=2)[-1])
+        _, extension = os.path.splitext(filename)
+        return self.attach_image(open(filename, 'rb'), extension)
 
     def end_image(self) -> 'Builder':
         """
