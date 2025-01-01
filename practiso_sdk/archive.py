@@ -381,6 +381,7 @@ class QuizContainer:
             buffer.extend(name.encode('utf-8'))
             buffer.append(0)
             cb = content.read()
+            content.seek(0)
             buffer.extend(len(cb).to_bytes(4))
             buffer.extend(cb)
 
