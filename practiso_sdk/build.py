@@ -179,6 +179,9 @@ class Builder:
         :param fp: The image content.
         :param extension: Optional suffix to the resource id.
         """
+        if extension and not extension.startswith('.'):
+            extension = '.' + extension
+
         res_id = str(uuid.uuid4()) + extension
         self.__resource_buffer[res_id] = fp
 
