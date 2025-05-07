@@ -41,6 +41,11 @@ class ArchiveTestCase(unittest.TestCase):
         parsed = archive.QuizContainer.parse_xml_element(tree.getroot())
         self.assertEqual(parsed, self.sample_quiz_set)
 
+    def test_should_read(self):
+        xml_bytes = self.sample_quiz_set.to_bytes()
+        parsed = archive.open(BytesIO(xml_bytes))
+        self.assertEqual(parsed, self.sample_quiz_set)
+
 
 if __name__ == '__main__':
     unittest.main()

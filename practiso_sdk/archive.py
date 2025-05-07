@@ -420,7 +420,11 @@ def open(fp: IO) -> 'QuizContainer':
     :return: Quiz container with all resources and frames.
     """
     content = fp.read()
-    i = content.index(0)
+    try:
+        i = content.index(0)
+    except ValueError:
+        i = len(content)
+
     tree = Xml.ElementTree()
     tree.parse(source=BytesIO(content[:i]))
 

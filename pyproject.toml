@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "practiso-sdk"
-version = "0.2.10"
+version = "0.2.11"
 description = "Practiso Software Development Kit"
 authors = ["zhufucdev <zhufuzhufu1@gmail.com>"]
 readme = "README.md"
