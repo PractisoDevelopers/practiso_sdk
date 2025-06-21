@@ -270,13 +270,17 @@ class Quiz:
     frames: list[ArchiveFrame]
     dimensions: set[Dimension]
 
-    def __init__(self, frames: list[ArchiveFrame], dimensions: set[Dimension] | list[Dimension],
-                 name: str | None, creation_time: datetime | None = None, modification_time: datetime | None = None):
+    def __init__(self, frames: list[ArchiveFrame] | None = None,
+                 dimensions: set[Dimension] | list[Dimension] | None = None,
+                 name: str | None = None, creation_time: datetime | None = None,
+                 modification_time: datetime | None = None):
         self.name = name
         self.creation_time = creation_time if creation_time is not None else datetime.now(UTC)
         self.modification_time = modification_time
-        self.frames = frames
-        self.dimensions = dimensions if isinstance(dimensions, set) else set(dimensions)
+        self.frames = frames or []
+        self.dimensions = set() if dimensions is None \
+            else dimensions if isinstance(dimensions, set)\
+            else set(dimensions)
 
     def append_to_element(self, element: Xml.Element):
         sub = Xml.SubElement(element, 'quiz',
