@@ -1,3 +1,4 @@
+import re
 import unittest
 from io import BytesIO
 from xml.etree.ElementTree import ElementTree
@@ -45,6 +46,11 @@ class ArchiveTestCase(unittest.TestCase):
         xml_bytes = self.sample_quiz_set.to_bytes()
         parsed = archive.open(BytesIO(xml_bytes))
         self.assertEqual(parsed, self.sample_quiz_set)
+
+    def test_not_contain_short_empty_ele(self):
+        quiz = archive.QuizContainer([archive.Quiz(frames=[archive.Text('')], dimensions=set(), name=None)])
+        text = quiz.to_bytes().decode()
+        self.assertFalse(re.compile(r'<text ?/>').match(text))
 
 
 if __name__ == '__main__':

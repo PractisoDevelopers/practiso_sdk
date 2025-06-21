@@ -379,7 +379,7 @@ class QuizContainer:
         :return: A byte array representing the archive.
         """
         ele = self.to_xml_element()
-        xml_bytes = Xml.tostring(ele, xml_declaration=True, encoding='utf-8')
+        xml_bytes = Xml.tostring(ele, xml_declaration=True, encoding='utf-8', short_empty_elements=False)
         if len(self.resources) <= 0:
             return xml_bytes
 
