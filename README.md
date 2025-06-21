@@ -1,6 +1,6 @@
 # Practiso SDK
 
-> - [x] Check out [Practiso](https://github.com/zhufucdev/Practiso), a local intelligent study utility.
+> - [x] Check out [Practiso](https://github.com/PractisoDevelopers/Practiso), a local intelligent study utility.
 
 To create Practiso archive for importing, use this Python SDK to
 
