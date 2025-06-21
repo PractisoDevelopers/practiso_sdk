@@ -6,7 +6,7 @@ authors = ["zhufucdev <zhufuzhufu1@gmail.com>"]
 readme = "README.md"
 package-mode = true
 license = "Apache-2.0"
-repository = "https://github.com/zhufucdev/practiso_sdk"
+repository = "https://github.com/PractisoDevelopers/practiso_sdk"
 
 [tool.poetry.dependencies]
 python = ">=3.10"
