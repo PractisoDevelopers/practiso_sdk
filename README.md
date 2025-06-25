@@ -1,12 +1,19 @@
 # Practiso SDK
 
-> - [x] Check out [Practiso](https://github.com/PractisoDevelopers/Practiso), a local intelligent study utility.
+> [!TIP]
+>  Check out [Practiso](https://github.com/PractisoDevelopers/Practiso), a local intelligent study utility.
 
 To create Practiso archive for importing, use this Python SDK to
 
 - create questions programmatically,
 - parse other formats like Excel sheets or RTF documents,
 - use generative AI to categorize the questions.
+
+## Getting started
+SDK is available via PyPi. To get it with pip, run:
+```shell
+pip install practiso-sdk
+```
 
 ## Frames
 
