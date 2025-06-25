@@ -2,6 +2,7 @@ import xml.etree.ElementTree as Xml
 from datetime import datetime, UTC
 from io import BytesIO
 from typing import Callable, Any, IO
+from xml.sax import saxutils
 
 NAMESPACE = 'http://schema.zhufucdev.com/practiso'
 
@@ -60,7 +61,7 @@ class Text(ArchiveFrame):
 
     def append_to_element(self, element: Xml.Element):
         sub = Xml.SubElement(element, 'text')
-        sub.text = self.content
+        sub.text = saxutils.escape(self.content)
 
     @staticmethod
     def parse_xml_element(element: Xml.Element) -> 'Text':
