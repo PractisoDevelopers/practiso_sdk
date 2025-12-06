@@ -105,6 +105,19 @@ class TestBuilder(TestCase):
         image_io.seek(0)
         self.assertEqual(parsed.resources[image_frame.filename].read(), image_io.read())
 
+    @asyncio_run
+    async def test_merging(self):
+        b1 = build.Builder()
+        b2 = build.Builder()
+        b1.begin_quiz('Quiz 1').end_quiz()
+        b2.begin_quiz('Quiz 2').end_quiz()
+        merged = build.merge(b1, b2)
+        archive = await merged.build()
+        self.assertEqual(len(archive.content), 2)
+        self.assertEqual(archive.creation_time, b1._Builder__creation_time)
+        self.assertEqual(archive.content[0].name, 'Quiz 1')
+        self.assertEqual(archive.content[1].name, 'Quiz 2')
+
 
 if __name__ == '__main__':
     unittest.main()

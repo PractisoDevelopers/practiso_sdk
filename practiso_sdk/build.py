@@ -1,3 +1,4 @@
+from functools import reduce
 import asyncio
 import os.path
 import uuid
@@ -114,10 +115,6 @@ class Builder:
     """
     Utility class to build an archive.
     """
-    __quizzes: list[Quiz]
-    __creation_time: datetime
-    __staging_stack: list[Quiz | ArchiveFrame | OptionItem]
-    __resource_buffer: dict[str, IO]
 
     def __init__(self, creation_time: datetime | None = None):
         self.__quizzes = list()
@@ -286,3 +283,11 @@ class Builder:
                 await asyncio.gather(*(update_dimensions(quiz) for quiz in self.__quizzes))
 
         return QuizContainer(self.__quizzes, self.__creation_time, self.__resource_buffer)
+
+def merge(*builders: Builder) -> Builder:
+    if len(builders) == 0:
+        return Builder()
+    result = Builder(creation_time=builders[0]._Builder__creation_time)
+    result._Builder__quizzes = list(reduce(lambda b, s: b + s._Builder__quizzes, builders, []))
+    return result
+    
